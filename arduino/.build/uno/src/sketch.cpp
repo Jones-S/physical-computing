@@ -15,6 +15,7 @@ int duration = 0; //button Press duration
 int start = 0;
 int pressTime;
 int lastClick = 0;
+int click;
 int pressCounter = 0;
 
 int parrotStorage[20];
@@ -35,22 +36,22 @@ void loop()
     //check state vs. actual state & check if not flicker
     if (buttonPressed != actualState)
     {
-        //example: if buttonPressed(true) == button HIGH (not pressed)
-        //set flag
-        change = true;
-        pressTime = millis() - lastClick;
-        lastClick = millis();
-        //buttonPressed = actualState;
-        // Serial.println("change");
+        lastClick = click;
+        click = millis();
+        if(click - lastClick > minimumTime){
+          change = true;
+        }
     }
 
-    if (change && pressTime > minimumTime && actualState)  //if button is down and a change happened
+
+
+    if (change && actualState)  //if button is down and a change happened
     {
         change = false;
         // if long enough start time
         start = millis(); //save current time in start
     }
-    else if (change && pressTime > minimumTime && !actualState) //if button up and change happened
+    else if (change && !actualState) //if button up and change happened
     {
         change = false;
         duration = millis() - start; //save duration by subtracting start from millis
@@ -71,9 +72,8 @@ void loop()
     }
 
     //check if recording should be finished
-    if (lastClick > pauseTime)
+    if ((millis() - click) > pauseTime)
     {
-        Serial.println(lastClick);
         //stop recording and play it
         for (int i = 0; i < pressCounter; i++)
         {
@@ -81,9 +81,11 @@ void loop()
             delay(parrotStorage[i]);
             digitalWrite(led, LOW);
             delay(400);
+            parrotStorage[i] = 0;
 
         }
-        lastClick = 0;
+
+        lastClick, click, pressCounter = 0;
 
     }
 
