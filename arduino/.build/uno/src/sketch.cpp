@@ -6,14 +6,16 @@ void loop();
 #define buttonPin 10 //input button
 #define led 11 //define led
 
-boolean buttonOn = 0;
-boolean stateChanged = false;
-
-int press_counter = 0;
-boolean state = 0; // 0 or 1
-int button_storage[20][2]; //set up Array with 2 spots , two dimensional Array
-int duration = 0; //storage for duration
+int minimumTime = 50;
+int buttonPressed = false;
+boolean change;
+boolean actualState = 0;
+int duration = 0; //button Press duration
 int start = 0;
+int lastClick = 0;
+int pressCounter = 0;
+
+int parrotStorage[20];
 
 void setup()
 {
@@ -24,30 +26,65 @@ void setup()
 
 void loop()
 {
-    if (buttonOn != digitalRead(buttonPin)) //if change had happened
+    // change digitalRead to more readable Format
+    actualState = !digitalRead(buttonPin);
+
+
+    //check state vs. actual state & check if not flicker
+    if (buttonPressed != actualState)
     {
+        //example: if buttonPressed(true) == button HIGH (not pressed)
         //set flag
-        stateChanged = true;
-        Serial.println("Change");
-        Serial.println(buttonOn);
+        change = true;
+        lastClick = millis();
+        //buttonPressed = actualState;
+        // Serial.println("change");
     }
 
-    if (stateChanged && buttonOn) //if button is down and it's the first loop since the press
+    if (change && lastClick > minimumTime && actualState)  //if button is down and a change happened
     {
-        start = millis();
-        stateChanged = false;
-        Serial.println("F");
+        change = false;
+        lastClick = 0;
+        // if long enough start time
+        start = millis(); //save current time in start
     }
-    else if (stateChanged && !buttonOn)     //if state changed and button released
+    else if (change && lastClick > minimumTime && !actualState) //if button up and change happened
     {
-        duration = millis() - start;
-        Serial.println(duration);
-        stateChanged = false;
-        Serial.println("F");
+        change = false;
+        lastClick = 0;
+        duration = millis() - start; //save duration by subtracting start from millis
 
+        //check if button was pressed for a satisfying duration
+        if (duration > minimumTime)
+        {
+            //save duration in array
+            parrotStorage[pressCounter] = duration;
+            Serial.println(parrotStorage[pressCounter]);
+            pressCounter++;
+        }
+        else
+        {
+            //discard duration
+            Serial.println("not recorded");
+        }
     }
 
-    buttonOn = digitalRead(buttonPin); //save state
+
+
+
+
+    buttonPressed = actualState;
+    // //save state of button in var
+    // if (!digitalRead(buttonPin))
+    // {
+    //     //if LOW (= pressed)
+    //     buttonPressed = true;
+    // }
+    // else
+    // {
+    //     //if buttonPin HIGH -> not pressed
+    //     buttonPressed = false;
+    // }
 
 
 
