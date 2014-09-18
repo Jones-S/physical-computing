@@ -3,35 +3,41 @@
 void setup();
 void loop();
 #line 1 "src/sketch.ino"
-int ledPin = 10;
-unsigned int i = 0;
-boolean rise = true;
-int period = 1000;
+#define buttonPin 10 //input button
+#define led 11 //define led
+#define ledRed 9
+
+boolean button_pressed = 0;
+int press_counter = 0;
+boolean state = 0; // 0 or 1
+
 void setup()
 {
-    pinMode(ledPin, OUTPUT);
+    pinMode(buttonPin, INPUT);
+    digitalWrite(buttonPin, HIGH); //pull up resistor activated
+    pinMode(led, OUTPUT);
+    pinMode(ledRed, OUTPUT);
+    Serial.begin(9600);
 }
+
 void loop()
 {
-    if (i == period)
+
+    if (button_pressed != digitalRead(buttonPin)) //if state different to button_pressed
     {
-        i = 1;
-        rise = !rise;
+        Serial.println(press_counter);
+        press_counter++;
     }
-    if (rise == false)
+    
+    if (press_counter > 7)
     {
-        digitalWrite(ledPin, LOW);
-        delayMicroseconds(i);
-        digitalWrite(ledPin, HIGH);
-        delayMicroseconds(period - i);
-        i = i + 1;
+        press_counter = 0; //reset
+        state = !state;
+        // Serial.println(state);
     }
-    if (rise == true)
-    {
-        digitalWrite(ledPin, LOW);
-        delayMicroseconds(period - i);
-        digitalWrite(ledPin, HIGH);
-        delayMicroseconds(i);
-        i = i + 1;
-    }
+
+    digitalWrite(led, !state);
+    digitalWrite(ledRed, state);
+    button_pressed = digitalRead(buttonPin); //save state in button_pressed
+    Serial.println(press_counter);
 }
