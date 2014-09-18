@@ -1,71 +1,21 @@
-/*
- Fade
-
- This example shows how to fade an LED on pin 9
- using the analogWrite() function.
-
- This example code is in the public domain.
- */
-
-int led1 = 11;           // the pin that the LED is attached to
-int led2 = 10;           // the pin that the LED is attached to
-int led3 = 6;           // the pin that the LED is attached to
-
-int brightness = 0;    // how bright the LED is
+int led = 10;           // the pin that the LED is attached to
 int fadeAmount = 5;    // how many points to fade the LED by
-int active_led = 0;
-long interval = 600;
-long previousMillis = 0;
+int duration = 10;
 
-// the setup routine runs once when you press reset:
-void setup()
-{
-    // declare pin 9 to be an output:
-    pinMode(led1, OUTPUT);
-    pinMode(led2, OUTPUT);
-    pinMode(led3, OUTPUT);
+void setup()  { 
+  pinMode(led, OUTPUT);
 
-}
+} 
 
 // the loop routine runs over and over again forever:
-void loop()
-{
-    unsigned long currentMillis = millis();
+void loop()  { 
+  digitalWrite(led, HIGH);
+  delay(duration);
+  digitalWrite(led, LOW)
 
-    if (currentMillis - previousMillis > interval)
-    {
-        startFade(active_led);
+  duration = duration + fadeAmount;
 
-        if (active_led == 2)
-        {
-            active_led = 0;
-        }
-        else
-        {
-            active_led++;
-        }
-    }
-
-
-
-
-}
-
-void startFade(int led)
-{
-
-    // reverse the direction of the fading at the ends of the fade:
-    for (int i = 0; i < 256; i++)
-    {
-        // set the brightness of pin:
-        analogWrite(led1, brightness);
-        // change the brightness for next time through the loop:
-        brightness = brightness + fadeAmount;
-
-        if (brightness == 0 || brightness == 255)
-        {
-            fadeAmount = -fadeAmount;
-        }
-    }
-
+  if (duration == 0 || duration == 1000) {
+    fadeAmount = -fadeAmount ; 
+  }     
 }
