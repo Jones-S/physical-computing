@@ -1,38 +1,61 @@
 #define buttonPin 10 //input button
 #define led 11 //define led
-#define ledRed 9
 
-boolean button_pressed = 0;
+boolean stateChanged = false;
+boolean buttonPressed = false;
+
 int press_counter = 0;
 boolean state = 0; // 0 or 1
+int button_storage[20][2]; //set up Array with 2 spots , two dimensional Array
+int duration = 0; //storage for duration
+int start = 0;
 
 void setup()
 {
-    pinMode(buttonPin, INPUT);
-    digitalWrite(buttonPin, HIGH); //pull up resistor activated
+    pinMode(buttonPin, INPUT_PULLUP);
     pinMode(led, OUTPUT);
-    pinMode(ledRed, OUTPUT);
     Serial.begin(9600);
 }
 
 void loop()
-{
+{   
+    state = digitalRead(buttonPin); //if button is down -> LOW
 
-    if (button_pressed != digitalRead(buttonPin)) //if state different to button_pressed
-    {
-        Serial.println(press_counter);
-        press_counter++;
-    }
     
-    if (press_counter > 7)
+
+
+    if (buttonOn != digitalRead(buttonPin)) //if change had happened
     {
-        press_counter = 0; //reset
-        state = !state;
-        // Serial.println(state);
+        //set flag
+        stateChanged = true;
+        Serial.println("Change");
+        Serial.println(buttonOn);
     }
 
-    digitalWrite(led, !state);
-    digitalWrite(ledRed, state);
-    button_pressed = digitalRead(buttonPin); //save state in button_pressed
-    Serial.println(press_counter);
+    if (stateChanged && buttonOn) //if button is down and it's the first loop since the press
+    {
+        start = millis();
+        stateChanged = false;
+        Serial.println("F");
+    }
+    else if (stateChanged && !buttonOn)     //if state changed and button released
+    {
+        duration = millis() - start;
+        Serial.println(duration);
+        stateChanged = false;
+        Serial.println("F");
+
+    }
+
+    if(digitalRead(buttonPin)){
+      //button is not pressed -> HIGH
+      buttonPressed = false;        
+    } else if (!digitalRead(buttonPin)){
+      //button is LOW and
+      buttonPressed = true;
+    }
+
+
+
+
 }
