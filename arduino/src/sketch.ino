@@ -1,5 +1,6 @@
 #define buttonPin 10 //input button
 #define led 11 //define led
+Mussaafuckaaa
 
 int minimumTime = 50;
 int pauseTime = 1500;
