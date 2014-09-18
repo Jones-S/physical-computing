@@ -7,11 +7,13 @@ void loop();
 #define led 11 //define led
 
 int minimumTime = 50;
+int pauseTime = 1500;
 int buttonPressed = false;
 boolean change;
 boolean actualState = 0;
 int duration = 0; //button Press duration
 int start = 0;
+int pressTime;
 int lastClick = 0;
 int pressCounter = 0;
 
@@ -36,22 +38,21 @@ void loop()
         //example: if buttonPressed(true) == button HIGH (not pressed)
         //set flag
         change = true;
+        pressTime = millis() - lastClick;
         lastClick = millis();
         //buttonPressed = actualState;
         // Serial.println("change");
     }
 
-    if (change && lastClick > minimumTime && actualState)  //if button is down and a change happened
+    if (change && pressTime > minimumTime && actualState)  //if button is down and a change happened
     {
         change = false;
-        lastClick = 0;
         // if long enough start time
         start = millis(); //save current time in start
     }
-    else if (change && lastClick > minimumTime && !actualState) //if button up and change happened
+    else if (change && pressTime > minimumTime && !actualState) //if button up and change happened
     {
         change = false;
-        lastClick = 0;
         duration = millis() - start; //save duration by subtracting start from millis
 
         //check if button was pressed for a satisfying duration
@@ -69,22 +70,28 @@ void loop()
         }
     }
 
+    //check if recording should be finished
+    if (lastClick > pauseTime)
+    {
+        Serial.println(lastClick);
+        //stop recording and play it
+        for (int i = 0; i < pressCounter; i++)
+        {
+            digitalWrite(led, HIGH);
+            delay(parrotStorage[i]);
+            digitalWrite(led, LOW);
+            delay(400);
+
+        }
+        lastClick = 0;
+
+    }
 
 
 
 
     buttonPressed = actualState;
-    // //save state of button in var
-    // if (!digitalRead(buttonPin))
-    // {
-    //     //if LOW (= pressed)
-    //     buttonPressed = true;
-    // }
-    // else
-    // {
-    //     //if buttonPin HIGH -> not pressed
-    //     buttonPressed = false;
-    // }
+
 
 
 
