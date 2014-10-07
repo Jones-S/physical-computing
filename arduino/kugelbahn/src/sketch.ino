@@ -6,10 +6,11 @@
 
 int inputInductor = 0;
 
-boolean buttonState1;             // the current reading from the input pin
-boolean buttonState2;             // the current reading from the input pin
-boolean lastButtonState1 = LOW;   // the previous reading from the input pin
-boolean lastButtonState2 = LOW;   // the previous reading from the input pin
+boolean buttonState1;          		// the current reading from the input pin
+boolean buttonState2;          		// the current reading from the input pin
+boolean lastButtonState1 = LOW;		// the previous reading from the input pin
+boolean lastButtonState2 = LOW;		// the previous reading from the input pin
+boolean newSignal = false;
 
 //booleans for saving fails
 boolean fail1 = 0;
@@ -95,8 +96,8 @@ void loop() {
     }
 
     //check if evaluation is necessary
-    if(newSignal && lastButtonSignal1 > 0 && !fail1){
-        evaluate ()
+    if(newSignal && lastButtonSignal1 > 0 && !fail1){ //only check if newSignal, button was pressed and there has not been a failure
+        evaluate (lastButtonSignal1, lastSignal)
     }
 
     // save the reading.  Next time through the loop,
@@ -107,6 +108,6 @@ void loop() {
 
 
 //evaluation of time difference
-int evaluate () {
-
+int evaluate (long signal, long buttonEvent) {
+	difference = signal - buttonEvent; //save time gap between action and reaction
 }
