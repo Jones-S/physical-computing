@@ -20,7 +20,7 @@ void setup(){
   //start serial connection
   Serial.begin(9600);
   pinMode(INPUT_COIL, INPUT);
-  pinMode(INPUT_BUT1, INPUT);
+  pinMode(INPUT_BUT1, INPUT_PULLUP);
   pinMode(LED, OUTPUT);
 
 }
@@ -28,8 +28,9 @@ void setup(){
 void loop(){
   inputCoil = analogRead(INPUT_COIL);
   buttonState = digitalRead(INPUT_BUT1);
+  buttonState = !buttonState;
   // Serial.println(inputCoil);
-  Serial.println(buttonState);
+  // Serial.println(buttonState);
 
   if(inputCoil > 300){
   	lastSignal = millis();

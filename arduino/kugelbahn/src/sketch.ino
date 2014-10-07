@@ -23,8 +23,9 @@ void setup(){
 void loop(){
   inputCoil = analogRead(INPUT_COIL);
   buttonState = digitalRead(INPUT_BUT1);
+  buttonState = !buttonState;
   // Serial.println(inputCoil);
-  Serial.println(buttonState);
+  // Serial.println(buttonState);
 
   if(inputCoil > 300){
   	lastSignal = millis();
