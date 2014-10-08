@@ -1,10 +1,3 @@
-#include <Arduino.h>
-
-void setup();
-void loop();
-int evaluate (long signal, long buttonEvent, int player);
-void resetScore();
-#line 1 "src/sketch.ino"
 #define INPUT_INDUCTOR A1
 #define INPUT_BUT1 2
 #define INPUT_BUT2 3

@@ -4,7 +4,7 @@ void setup();
 void loop();
 int evaluate (long signal, long buttonEvent, int player);
 void resetScore();
-#line 1 "src/sketch.ino"
+#line 1 "src/sketch/sketch.ino"
 #define INPUT_INDUCTOR A1
 #define INPUT_BUT1 2
 #define INPUT_BUT2 3
@@ -119,8 +119,7 @@ void loop() {
         }
 
         //check if evaluation is necessary
-        //only check if newSignal, button was pressed after a newSignal and there has not been a failure
-        if (newSignal && lastButtonSignals[i] > 0 && !fails[i] && (lastButtonSignals[i] - newSignal > 0)) {
+        if (newSignal && lastButtonSignals[i] > 0 && !fails[i]) { //only check if newSignal, button was pressed and there has not been a failure
             evaluate (lastButtonSignals[i], lastSignal, i); //pass TimeEvents and Player (0 or 1)
         }
     }
