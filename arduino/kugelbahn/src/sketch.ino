@@ -10,10 +10,11 @@ int readings[2];
 int highestPeak = 0;                    // save the highest peak in the period when the sphere passes the inductor
 
 boolean buttonStates[2];                // actual current button state without flickering
-boolean newButtonChange[2];				// flags for buttonEvents
+boolean newButtonChange[2];             // flags for buttonEvents
 
 boolean lastButtonStates[2] = {LOW, LOW};      // buttonStates from last loop
 boolean newSignal = false;
+boolean secondNewSignal = false;			// register if 2 signals have passed, in case both players had a failure
 int minTimeBeforeCoil = 700;            // minTimeBeforeCoil in ms, you can't click in this time range otherwise it'll result in a fail
 
 //booleans for saving fails
@@ -48,26 +49,32 @@ void setup() {
 }
 
 void loop() {
-	//TODO:
-	//avoid points if button is pressed during the increasing of the copper signals
+    //TODO:
+    //avoid points if button is pressed during the increasing of the copper signals
 
     //read analog input (0 - 1023) from copper inductor
     inputInductor = analogRead(INPUT_INDUCTOR);
-    if(inputInductor > 4){
-    	Serial.println(inputInductor);
-    }
+    // if(inputInductor > 4){
+    //  Serial.println(inputInductor);
+    // }
 
-    if (inputInductor > 25 && inputInductor > highestPeak) {
+    if (inputInductor > 20 && inputInductor > highestPeak) {
+    	// check if last Signal was a long time ago, if so set 2ndSignal flag
+    	if(millis() - lastSignal > minInterspace && newSignal){
+    	    secondNewSignal = true;
+    	    Serial.println("2ND Signal!");
+    	    //after 2 players failed and no evaluation can take place and a 2nd signal came -> reset fails of both players
+    	    resetFails();
+    	}
         highestPeak = inputInductor; //save new highest value
         lastSignal = millis();
         newSignal = true;
-        Serial.print("##### Last Signal: "); Serial.println(lastSignal);
+        Serial.print("______^__ NEW PEAK: "); Serial.println(lastSignal);
     }
     // if a certain time has passed highest Peak will be reset
     if (millis() - lastSignal > minInterspace && lastSignal != 0) {
-        lastSignal = 0; //reset lastSignal to 0ms
         highestPeak = 0;
-        Serial.println("----------- Reset");
+        // Serial.println("----------- Reset");
     }
 
     // read the state of the switch into a local variable:
@@ -99,21 +106,25 @@ void loop() {
             //check if button is HIGH && if button is newly changed -> save time to lastButtonSignal
             if (buttonStates[i] == HIGH && newButtonChange[i]) {
                 lastButtonSignals[i] = millis();
-                Serial.print("Last Time Button Pressed : "); Serial.print(lastButtonSignals[i]); Serial.print(" of Button Nr.: "); Serial.print(i); Serial.println();
-            	//reset ButtonEventFlag
-            	newButtonChange[i] = false;
+                Serial.print("Last Time Button Pressed : "); Serial.print(lastButtonSignals[i]); Serial.print(" of Player Nr.: "); Serial.print(i); Serial.println();
+                //reset ButtonEventFlag
+                newButtonChange[i] = false;
             }
         }
 
-        //check if somebody has clicked too early
-        if (lastSignal - lastButtonSignals[i] < minTimeBeforeCoil) {
+        //check if somebody has clicked too early and only if somebody clicked (otherwise it would be executed from the beginning)
+        //also exclude normal buttonEvents which would evaluate below 0 > TRUE: <minTimeBeforeCoil
+        //only do it if fail is still true
+        int timeToSignal = lastSignal - lastButtonSignals[i];
+        if ( 0 < timeToSignal && timeToSignal < minTimeBeforeCoil && lastButtonSignals[i] != 0 && !fails[i]) {
             //set failure for the player releasing too early
             fails[i] = true;
+            Serial.println("BIG FAIL");
         }
 
         //check if evaluation is necessary
         //only check if newSignal, button was pressed after a newSignal and there has not been a failure
-        if (newSignal && lastButtonSignals[i] > 0 && !fails[i] && (lastButtonSignals[i] - newSignal > 0)) {
+        if (newSignal && lastButtonSignals[i] > 0 && lastButtonSignals[i] - lastSignal > 0 && !fails[i]) {
             evaluate (lastButtonSignals[i], lastSignal, i); //pass TimeEvents and Player (0 or 1)
         }
     }
@@ -137,15 +148,19 @@ void loop() {
 
 
 //evaluation of time difference
-int evaluate (long signal, long buttonEvent, int player) {
+int evaluate (long buttonEvent, long signal, int player) {
     //save time gap between action and reaction
-    timeDifference = signal - buttonEvent;
-    Serial.print(timeDifference); Serial.print(" = Reaction Delay");
+    timeDifference =  buttonEvent - signal;
+    Serial.println(); Serial.print(timeDifference); Serial.print(" = Reaction Delay from Player: "); Serial.print(player);
+    Serial.print(" – last Button: "); Serial.print(lastButtonSignals[player]); Serial.print(" – and last Signal: "); Serial.println(lastSignal);
     // reset newSignal flag so that further evaluation is impossible
     newSignal = false;
+    secondNewSignal = false;
     int currentPos = pointsPosCounter[player];
     points[player][currentPos] = 1; //example: points[player1]pointsPosCounter[player] = 4 -> 4th point of player 1 will be set to 1 (4th LED should light up)
     pointsPosCounter[player] += 1; //increase current position in counter array by 1.
+    //if somebody scored reset fails of both players
+    resetFails();
 }
 
 void resetScore() {
@@ -154,5 +169,11 @@ void resetScore() {
         for (int j = 0; j < sizeof(points) - 1; j++) {
             points[i][j] = 0;
         }
+    }
+}
+
+void resetFails() {
+	for(int i=0; i<2; i++){
+        fails[i] = false;
     }
 }
