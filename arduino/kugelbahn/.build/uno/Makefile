@@ -162,12 +162,6 @@ include .build/uno/arduino/WString.d
 
 
 
-.build/uno/src/sketch/sketch.o : .build/uno/src/sketch/sketch.cpp
-	@echo [93msrc/sketch/sketch.cpp[0m
-	@mkdir -p .build/uno/src/sketch
-	@/Applications/Arduino.app/Contents/Resources/Java/hardware/tools/avr/bin/avr-g++ -mmcu=atmega328p -DF_CPU=16000000L -DARDUINO=106 -I/Applications/Arduino.app/Contents/Resources/Java/hardware/arduino/cores/arduino -ffunction-sections -fdata-sections -g -Os -w -I/Applications/Arduino.app/Contents/Resources/Java/hardware/arduino/variants/standard -I/Applications/Arduino.app/Contents/Resources/Java/hardware/arduino/cores/arduino -I/Applications/Arduino.app/Contents/Resources/Java/hardware/arduino/cores/arduino/avr-libc -fno-exceptions -iquote src/sketch  -o $@ -c .build/uno/src/sketch/sketch.cpp
-include .build/uno/src/sketch/sketch.d
-
 .build/uno/src/sketch.o : .build/uno/src/sketch.cpp
 	@echo [93msrc/sketch.cpp[0m
 	@mkdir -p .build/uno/src
@@ -180,7 +174,7 @@ include .build/uno/src/sketch.d
 
 
 
-.build/uno/firmware.elf : .build/uno/src/sketch/sketch.o .build/uno/src/sketch.o .build/uno/arduino/libarduino.a
+.build/uno/firmware.elf : .build/uno/src/sketch.o .build/uno/arduino/libarduino.a
 	@echo [92mLinking firmware.elf[0m
 	@/Applications/Arduino.app/Contents/Resources/Java/hardware/tools/avr/bin/avr-gcc -mmcu=atmega328p -Wl,-Os -Wl,--gc-sections -o $@ $^ -lm
 
