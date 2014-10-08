@@ -112,7 +112,8 @@ void loop() {
         }
 
         //check if evaluation is necessary
-        if (newSignal && lastButtonSignals[i] > 0 && !fails[i]) { //only check if newSignal, button was pressed and there has not been a failure
+        //only check if newSignal, button was pressed after a newSignal and there has not been a failure
+        if (newSignal && lastButtonSignals[i] > 0 && !fails[i] && (lastButtonSignals[i] - newSignal > 0)) {
             evaluate (lastButtonSignals[i], lastSignal, i); //pass TimeEvents and Player (0 or 1)
         }
     }
