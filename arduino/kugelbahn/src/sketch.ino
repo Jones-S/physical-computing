@@ -6,20 +6,23 @@
 
 int inputInductor = 0;
 int readings[2] = {0, 0};
+int highestPeak = 0;					// save the highest peak in the period when the sphere passes the inductor
 
 boolean buttonStates[2];                // actual current button state without flickering
 
 boolean lastButtonStates[2] = {LOW, LOW};      // buttonStates from last loop
 boolean newSignal = false;
+int minTimeBeforeCoil = 700;			// minTimeBeforeCoil in ms, you can't click in this time range otherwise it'll result in a fail
 
 //booleans for saving fails
-boolean fails[2] = {0, 0};              // failure states in array
+boolean fails[2] = {false, false};              // failure states in array
 
 
 // the following variables are long's because the time, measured in miliseconds,
 // will quickly become a bigger number than can be stored in an int.
 long lastDebounceTimes[2] = {0, 0};     // the last time the input button 2 was toggled
-long debounceDelay = 50;                // the debounce time; increase if the output flickers
+int debounceDelay = 50;                 // the debounce time; increase if the output flickers
+int minInterspace = 500;				// minimum Time between the inductors -> reset highestPeak
 
 long lastButtonSignals[2] = {0, 0};
 long lastSignal = 0;                    // var for saving time of last inductor signal
@@ -43,21 +46,19 @@ void setup() {
 void loop() {
     //read analog input (0 - 1023) from copper inductor
     inputInductor = analogRead(INPUT_INDUCTOR);
+    if(inputInductor > 300 && inputInductor > highestPeak){
+        highestPeak = inputInductor; //save new highest value
+        lastSignal = millis();
+        newSignal = true;
+    }
+    // if a certain time has passed highest Peak will be reset
+    if(millis() - lastSignal > minInterspace;){
+        lastSignal = 0; //reset lastSignal to 0ms
+    }
 
     // read the state of the switch into a local variable:
     readings[0] = !digitalRead(INPUT_BUT1); //reverse value because of pullup resistor: 0 if button is pressed
     readings[1] = !digitalRead(INPUT_BUT2); //reverse value because of pullup resistor: 0 if button is pressed
-
-
-    //TODO: check highest peak signal
-    if (inputInductor > 300) {
-        lastSignal = millis();
-        newSignal = true;
-        Serial.print(inputInductor);
-        Serial.print(" ################################");
-        Serial.println();
-    }
-
 
 
     // check to see if you just pressed the button
@@ -86,8 +87,14 @@ void loop() {
             }
         }
 
+        //check if somebody has clicked too early
+        if(lastSignal - lastButtonSignal[i] < minTimeBeforeCoil){
+            //set failure for the player releasing too early
+            fails[i] = true;
+        }
+
         //check if evaluation is necessary
-        if (newSignal && lastButtonSignals[i] > 0 && !fail[i]) { //only check if newSignal, button was pressed and there has not been a failure
+        if (newSignal && lastButtonSignals[i] > 0 && !fails[i]) { //only check if newSignal, button was pressed and there has not been a failure
             evaluate (lastButtonSignals[i], lastSignal, i); //pass TimeEvents and Player (0 or 1)
         }
     }
@@ -105,8 +112,11 @@ void loop() {
 
 //evaluation of time difference
 int evaluate (long signal, long buttonEvent, int player) {
-    difference = signal - buttonEvent; //save time gap between action and reaction
+	//save time gap between action and reaction
+    difference = signal - buttonEvent;
     Serial.print(difference); Serial.print(" = Reaction Delay");
+    // reset newSignal flag so that further evaluation is impossible
+    newSignal = false;
     points[player][pointsPosCounter[i]] = 1; //example: points[player1][4] -> 4th point of player 1 will be set to 1 (4th LED should light up)
     pointsPosCounter[i]] += 1; //increase current position in counter array by 1.
 }
