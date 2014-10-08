@@ -50,7 +50,6 @@ void setup() {
     //reset Score to 0 for both players
     resetScore();
     // Serial.println();
-    printShift();
 
 
 }
@@ -154,7 +153,7 @@ void loop() {
         digitalWrite(LED, LOW);
     }
 
-    printShift();
+    // printShift();
 }
 
 
@@ -181,6 +180,7 @@ int evaluate (long buttonEvent, long signal, int player) {
     }
     Serial.println();
     resetFails();
+    printShift(); //print score in leds
 }
 
 void resetScore() {
@@ -200,13 +200,15 @@ void resetFails() {
 
 void printShift() {
 
-	byte myByte =  170; //64 in binary = 0100 0000
-
+	byte myByte =  0;
     // Serial.println(myByte, BIN);
+    for(int i=0; i<6; i++){
+        bitWrite(myByte, i, points[0][i]); // print score of player 1 in a byte
+    }
 
     digitalWrite(LATCH, LOW);
 
-    shiftOut(DATA, CLOCK, LSBFIRST, myByte);
+    shiftOut(DATA, CLOCK, MSBFIRST, myByte);
 
     digitalWrite(LATCH, HIGH);
 
