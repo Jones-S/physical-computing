@@ -2,6 +2,9 @@
 #define INPUT_BUT1 2
 #define INPUT_BUT2 3
 #define LED 9
+#define CLOCK 5
+#define LATCH 6
+#define DATA 7
 
 const int arraySize = 2;
 
@@ -14,7 +17,7 @@ boolean newButtonChange[2];             // flags for buttonEvents
 
 boolean lastButtonStates[2] = {LOW, LOW};      // buttonStates from last loop
 boolean newSignal = false;
-boolean secondNewSignal = false;			// register if 2 signals have passed, in case both players had a failure
+boolean secondNewSignal = false;            // register if 2 signals have passed, in case both players had a failure
 int minTimeBeforeCoil = 700;            // minTimeBeforeCoil in ms, you can't click in this time range otherwise it'll result in a fail
 
 //booleans for saving fails
@@ -41,9 +44,13 @@ void setup() {
     pinMode(INPUT_BUT1, INPUT_PULLUP);  //PULLUP Resistor activated -> Signal reverted button off = 1;
     pinMode(INPUT_BUT2, INPUT_PULLUP);
     pinMode(LED, OUTPUT);
+    pinMode(LATCH, OUTPUT);
+    pinMode(CLOCK, OUTPUT);
+    pinMode(DATA, OUTPUT);
     //reset Score to 0 for both players
     resetScore();
     // Serial.println();
+    printShift();
 
 
 }
@@ -59,13 +66,13 @@ void loop() {
     // }
 
     if (inputInductor > 20 && inputInductor > highestPeak) {
-    	// check if last Signal was a long time ago, if so set 2ndSignal flag
-    	if(millis() - lastSignal > minInterspace && newSignal){
-    	    secondNewSignal = true;
-    	    Serial.println("2ND Signal!");
-    	    //after 2 players failed and no evaluation can take place and a 2nd signal came -> reset fails of both players
-    	    resetFails();
-    	}
+        // check if last Signal was a long time ago, if so set 2ndSignal flag
+        if (millis() - lastSignal > minInterspace && newSignal) {
+            secondNewSignal = true;
+            Serial.println("2ND Signal!");
+            //after 2 players failed and no evaluation can take place and a 2nd signal came -> reset fails of both players
+            resetFails();
+        }
         highestPeak = inputInductor; //save new highest value
         lastSignal = millis();
         newSignal = true;
@@ -144,6 +151,8 @@ void loop() {
     } else {
         digitalWrite(LED, LOW);
     }
+
+    printShift();
 }
 
 
@@ -173,7 +182,20 @@ void resetScore() {
 }
 
 void resetFails() {
-	for(int i=0; i<2; i++){
+    for (int i = 0; i < 2; i++) {
         fails[i] = false;
     }
+}
+
+void printShift() {
+
+	byte myByte =  170; //64 in binary = 0100 0000
+    // Serial.println(myByte, BIN);
+
+    digitalWrite(LATCH, LOW);
+
+    shiftOut(DATA, CLOCK, LSBFIRST, myByte);
+
+    digitalWrite(LATCH, HIGH);
+
 }
