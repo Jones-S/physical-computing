@@ -7,40 +7,36 @@
 int inputInductor = 0;
 int readings[2] = {0, 0};
 
-// boolean buttonState1;                // the current reading from the input pin
-// boolean buttonState2;                // the current reading from the input pin
 boolean buttonStates[2];                // actual current button state without flickering
-// boolean lastButtonState1 = LOW;          // the previous reading from the input pin
-// boolean lastButtonState2 = LOW;          // the previous reading from the input pin
-boolean lastButtonStates[2] = LOW;      // buttonStates from last loop
+
+boolean lastButtonStates[2] = {LOW, LOW};      // buttonStates from last loop
 boolean newSignal = false;
 
 //booleans for saving fails
-// boolean fail1 = 0;
-// boolean fail2 = 0;
 boolean fails[2] = {0, 0};              // failure states in array
 
 
 // the following variables are long's because the time, measured in miliseconds,
 // will quickly become a bigger number than can be stored in an int.
-// long lastDebounceTime1 = 0;          // the last time the input button 1 was toggled
-// long lastDebounceTime2 = 0;          // the last time the input button 2 was toggled
-long lastDebounceTimes[2] = {0, 0}; s
+long lastDebounceTimes[2] = {0, 0};     // the last time the input button 2 was toggled
 long debounceDelay = 50;                // the debounce time; increase if the output flickers
 
-// long lastButtonSignal1 = 0;          // vars for saving the time of the last button press-event
-// long lastButtonSignal2 = 0;
 long lastButtonSignals[2] = {0, 0};
 long lastSignal = 0;                    // var for saving time of last inductor signal
 int timeDifference = 0;                 // var for saving the difference in time between newSignal and lastButtonSignal
 
+boolean points[2][6];                   // array with points, 2x for each player and 6 points possible:
+int pointsPosCounter[2] = {0, 0};				// array with current position of points array, can go until max points (at this time 6)
 
 void setup() {
     //start serial connection
     Serial.begin(9600);
     pinMode(INPUT_INDUCTOR, INPUT);
-    pinMode(INPUT_BUT1, INPUT_PULLUP);
+    pinMode(INPUT_BUT1, INPUT_PULLUP);  //PULLUP Resistor activated -> Signal reverted button off = 1;
+    pinMode(INPUT_BUT2, INPUT_PULLUP);
     pinMode(LED, OUTPUT);
+    //reset Score to 0 for both players
+    resetScore();
 
 }
 
@@ -92,7 +88,7 @@ void loop() {
 
         //check if evaluation is necessary
         if (newSignal && lastButtonSignals[i] > 0 && !fail[i]) { //only check if newSignal, button was pressed and there has not been a failure
-            evaluate (lastButtonSignals[i], lastSignal)
+            evaluate (lastButtonSignals[i], lastSignal, i); //pass TimeEvents and Player (0 or 1)
         }
     }
 
@@ -101,13 +97,25 @@ void loop() {
 
     // save the reading.  Next time through the loop,
     // it'll be the lastButtonState:
-    for(int i=0; i< sizeof(lastButtonStates) - 1; i++){
+    for (int i = 0; i < sizeof(lastButtonStates) - 1; i++) {
         lastButtonStates[i] = readings[i];
     }
 }
 
 
 //evaluation of time difference
-int evaluate (long signal, long buttonEvent) {
+int evaluate (long signal, long buttonEvent, int player) {
     difference = signal - buttonEvent; //save time gap between action and reaction
+    Serial.print(difference); Serial.print(" = Reaction Delay");
+    points[player][pointsPosCounter[i]] = 1; //example: points[player1][4] -> 4th point of player 1 will be set to 1 (4th LED should light up)
+    pointsPosCounter[i]] += 1; //increase current position in counter array by 1.
+}
+
+void resetScore() {
+    //fill points array with 0
+    for (int i = 0; i < sizeof(points) - 1; i++) {
+        for (int j = 0; j < sizeof(points) - 1; j++) {
+            points[i][j] = 0;
+        }
+    }
 }
