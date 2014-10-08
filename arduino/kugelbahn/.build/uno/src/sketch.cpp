@@ -44,7 +44,7 @@ long lastSignal = 0;                    // var for saving time of last inductor 
 int timeDifference = 0;                 // var for saving the difference in time between newSignal and lastButtonSignal
 
 boolean points[2][6];                   // array with points, 2x for each player and 6 points possible:
-int pointsPosCounter[2] = {0, 0};               // array with current position of points array, can go until max points (at this time 6)
+int pointsPosCounter = 0;              // array with current position of points array, can go until max points (at this time 6)
 
 void setup() {
     //start serial connection
@@ -67,6 +67,8 @@ void setup() {
 void loop() {
     //TODO:
     //avoid points if button is pressed during the increasing of the copper signals
+    //TODO2:
+    //set 0 if both players have failed (2nd signal etc.)
 
     //read analog input (0 - 1023) from copper inductor
     inputInductor = analogRead(INPUT_INDUCTOR);
@@ -174,10 +176,19 @@ int evaluate (long buttonEvent, long signal, int player) {
     // reset newSignal flag so that further evaluation is impossible
     newSignal = false;
     secondNewSignal = false;
-    int currentPos = pointsPosCounter[player];
-    points[player][currentPos] = 1; //example: points[player1]pointsPosCounter[player] = 4 -> 4th point of player 1 will be set to 1 (4th LED should light up)
-    pointsPosCounter[player] += 1; //increase current position in counter array by 1.
+    if (player == 0){
+    	points[0][pointsPosCounter] = 1; //set a point (1) at the current pos in the players score (points)
+    	points[1][pointsPosCounter] = 0; //set a 0 for the other player at the same position in the score
+    } else if(player == 1){
+    	points[1][pointsPosCounter] = 1;
+    	points[0][pointsPosCounter] = 0;
+    }
+    pointsPosCounter += 1; //increase current position in counter array by 1.
     //if somebody scored reset fails of both players
+    for(int i=0; i< 6; i++){
+        Serial.print(points[player][i]); Serial.print(", ");
+    }
+    Serial.println();
     resetFails();
 }
 
@@ -199,7 +210,8 @@ void resetFails() {
 void printShift() {
 
 	byte myByte =  170; //64 in binary = 0100 0000
-    Serial.println(myByte, BIN);
+
+    // Serial.println(myByte, BIN);
 
     digitalWrite(LATCH, LOW);
 
