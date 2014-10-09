@@ -209,15 +209,25 @@ void resetFails() {
 
 void printShift() {
 
-	byte myByte =  0;
-    // Serial.println(myByte, BIN);
+	byte scorePlayer1 =  0;
+	byte scorePlayer2 =  0;
+
     for(int i=0; i<6; i++){
-        bitWrite(myByte, i, points[0][i]); // print score of player 1 in a byte
+        bitWrite(scorePlayer1, i, points[0][i]); // print score of player 1 in a byte
     }
+    for(int i=0; i<6; i++){
+    	bitWrite(scorePlayer2, i, points[1][i]);
+    }
+
+    // myByte = 204; //11001100
+    // byte myByte2 = 48;  //00110000
+    // Serial.println(myByte, BIN);
+    // Serial.println(myByte2, BIN);
 
     digitalWrite(LATCH, LOW);
 
-    shiftOut(DATA, CLOCK, MSBFIRST, myByte);
+    shiftOut(DATA, CLOCK, MSBFIRST, scorePlayer1);
+    shiftOut(DATA, CLOCK, MSBFIRST, scorePlayer2);
 
     digitalWrite(LATCH, HIGH);
 
