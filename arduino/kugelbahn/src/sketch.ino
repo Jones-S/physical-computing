@@ -41,7 +41,7 @@ void setup() {
     //start serial connection
     Serial.begin(9600);
     pinMode(INPUT_INDUCTOR, INPUT);
-    pinMode(INPUT_BUT1, INPUT_PULLUP);  //PULLUP Resistor activated -> Signal reverted button off = 1;
+    pinMode(INPUT_BUT1, INPUT);
     pinMode(INPUT_BUT2, INPUT_PULLUP);
     pinMode(LED, OUTPUT);
     pinMode(LATCH, OUTPUT);
@@ -61,10 +61,8 @@ void loop() {
     //set 0 if both players have failed (2nd signal etc.)
 
     //read analog input (0 - 1023) from copper inductor
+
     inputInductor = analogRead(INPUT_INDUCTOR);
-    // if(inputInductor > 4){
-    //  Serial.println(inputInductor);
-    // }
 
     if (inputInductor > 20 && inputInductor > highestPeak) {
         // check if last Signal was a long time ago, if so set 2ndSignal flag
@@ -86,8 +84,10 @@ void loop() {
     }
 
     // read the state of the switch into a local variable:
-    readings[0] = !digitalRead(INPUT_BUT1); //reverse value because of pullup resistor: 0 if button is pressed
+    readings[0] = digitalRead(INPUT_BUT1); //reverse value because of pullup resistor: 0 if button is pressed
     readings[1] = !digitalRead(INPUT_BUT2); //reverse value because of pullup resistor: 0 if button is pressed
+    // Serial.println(analogRead(INPUT_INDUCTOR));
+    // Serial.println(readings[0]);
 
     // check to see if you just pressed the button
     // (i.e. the input went from LOW to HIGH),  and you've waited
@@ -138,19 +138,10 @@ void loop() {
     }
 
 
-
-
     // save the reading.  Next time through the loop,
     // it'll be the lastButtonState:
     for (int i = 0; i < arraySize; i++) {
         lastButtonStates[i] = readings[i];
-    }
-
-    //if one or both buttonStates are On LED lights up
-    if (buttonStates[0] || buttonStates [1]) {
-        digitalWrite(LED, HIGH);
-    } else {
-        digitalWrite(LED, LOW);
     }
 
     // printShift();
@@ -175,9 +166,9 @@ int evaluate (long buttonEvent, long signal, int player) {
     }
     pointsPosCounter += 1; //increase current position in counter array by 1.
     //if somebody scored reset fails of both players
-    for(int i=0; i< 6; i++){
-        Serial.print(points[player][i]); Serial.print(", ");
-    }
+    // for(int i=0; i< 6; i++){
+    //     Serial.print(points[player][i]); Serial.print(", ");
+    // }
     Serial.println();
     resetFails();
     printShift(); //print score in leds
