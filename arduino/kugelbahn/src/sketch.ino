@@ -19,10 +19,10 @@ boolean newButtonChange[2];             // flags for buttonEvents
 boolean lastButtonStates[2] = {LOW, LOW};      // buttonStates from last loop
 boolean newSignal = false;
 boolean secondNewSignal = false;            // register if 2 signals have passed, in case both players had a failure
-boolean passedInductor = 0;
-boolean gameStarted = 0;
+boolean passedInductor = false;
+boolean gameStarted = false;
 int minTimeBeforeCoil = 450;            // minTimeBeforeCoil in ms, you can't click in this time range otherwise it'll result in a fail
-int maxPauseTime = 3000;				// if after 3s nothing happend -> resetGame, because one inductor signal was probably too low
+int maxPauseTime = 3000;                // if after 3s nothing happend -> resetGame, because one inductor signal was probably too low
 
 //booleans for saving fails
 boolean fails[2] = {false, false};              // failure states in array
@@ -78,6 +78,10 @@ void loop() {
         if (millis() - lastSignal > minInterspace && newSignal) {
             secondNewSignal = true;
             Serial.println("2ND Signal!");
+            for(int i=0; i<2; i++){
+                points[i][pointsPosCounter] = 0;
+            }
+            pointsPosCounter++;
             //after 2 players failed and no evaluation can take place and a 2nd signal came -> reset fails of both players
             resetFails();
         }
@@ -94,13 +98,13 @@ void loop() {
         // Serial.println("----------- Reset");
     }
 
-    if(millis() - lastSignal > maxPauseTime && gameStarted){
-		resetGame();
+    if (millis() - lastSignal > maxPauseTime && gameStarted) {
+        resetGame();
     }
 
-    if(millis() - lastSignal > minInterspace && passedInductor){
-    	signalCount++;
-    	passedInductor = false;
+    if (millis() - lastSignal > minInterspace && passedInductor) {
+        signalCount++;
+        passedInductor = false;
     }
 
     // read the state of the switch into a local variable:
@@ -166,10 +170,10 @@ void loop() {
     }
 
     //set fail lights on, if fail
-    // digitalWrite(LED_FAIL1, fails[0]);
-    // digitalWrite(LED_FAIL2, fails[1]);
-    digitalWrite(LED_FAIL1, HIGH);
-    digitalWrite(LED_FAIL2, HIGH);
+    digitalWrite(LED_FAIL1, fails[0]);
+    digitalWrite(LED_FAIL2, fails[1]);
+    // digitalWrite(LED_FAIL1, HIGH);
+    // digitalWrite(LED_FAIL2, HIGH);
 
 
     if (signalCount == 7) {
@@ -213,6 +217,7 @@ void resetScore() {
             points[i][j] = 0;
         }
     }
+    pointsPosCounter = 0;
 }
 
 void resetFails() {
@@ -237,8 +242,11 @@ void printShift() {
     // byte myByte2 = 48;  //00110000
     // Serial.println(myByte, BIN);
     // Serial.println(myByte2, BIN);
-    scorePlayer1 = 255;
-    scorePlayer2 = 255;
+    if (!gameStarted) {
+        scorePlayer1 = 255;
+        scorePlayer2 = 255;
+    }
+
 
     digitalWrite(LATCH, LOW);
 
@@ -260,12 +268,21 @@ void printScore () {
 }
 
 void resetGame() {
-	gameStarted = false;
-	delay(10000);
+    gameStarted = false;
+    delay(8000);
     Serial.println("RESET GAME");
     resetFails();
     digitalWrite(LED_FAIL1, LOW);
     digitalWrite(LED_FAIL2, LOW);
+    newSignal = false;
+    secondNewSignal = false;
+    highestPeak = 0;
+    lastSignal = 0;
+    passedInductor = false;
+    for(int i=0; i<2; i++){
+        lastButtonSignals[i] = 0;
+    }
+    
 
     signalCount = 0;
     byte zero = 0;
