@@ -6,11 +6,14 @@ int evaluate (long buttonEvent, long signal, int player);
 void resetScore();
 void resetFails();
 void printShift();
+void printScore ();
+void resetGame();
 #line 1 "src/sketch.ino"
 #define INPUT_INDUCTOR A1
 #define INPUT_BUT1 2
 #define INPUT_BUT2 3
-#define LED 9
+#define LED_FAIL1 9
+#define LED_FAIL2 10
 #define CLOCK 5
 #define LATCH 6
 #define DATA 7
@@ -27,7 +30,10 @@ boolean newButtonChange[2];             // flags for buttonEvents
 boolean lastButtonStates[2] = {LOW, LOW};      // buttonStates from last loop
 boolean newSignal = false;
 boolean secondNewSignal = false;            // register if 2 signals have passed, in case both players had a failure
-int minTimeBeforeCoil = 700;            // minTimeBeforeCoil in ms, you can't click in this time range otherwise it'll result in a fail
+boolean passedInductor = 0;
+boolean gameStarted = 0;
+int minTimeBeforeCoil = 450;            // minTimeBeforeCoil in ms, you can't click in this time range otherwise it'll result in a fail
+int maxPauseTime = 3000;				// if after 3s nothing happend -> resetGame, because one inductor signal was probably too low
 
 //booleans for saving fails
 boolean fails[2] = {false, false};              // failure states in array
@@ -42,23 +48,25 @@ int minInterspace = 500;                // minimum Time between the inductors ->
 long lastButtonSignals[2] = {0, 0};
 long lastSignal = 0;                    // var for saving time of last inductor signal
 int timeDifference = 0;                 // var for saving the difference in time between newSignal and lastButtonSignal
+int signalCount = 0;                    // count inductor coil signals
 
-boolean points[2][6];                   // array with points, 2x for each player and 6 points possible:
-int pointsPosCounter = 0;              // array with current position of points array, can go until max points (at this time 6)
+boolean points[2][7];                   // array with points, 2x for each player and 6 points possible:
+int pointsPosCounter = 0;               // array with current position of points array, can go until max points (at this time 6)
 
 void setup() {
     //start serial connection
     Serial.begin(9600);
     pinMode(INPUT_INDUCTOR, INPUT);
     pinMode(INPUT_BUT1, INPUT);
-    pinMode(INPUT_BUT2, INPUT_PULLUP);
-    pinMode(LED, OUTPUT);
+    pinMode(INPUT_BUT2, INPUT);
+    pinMode(LED_FAIL1, OUTPUT);
+    pinMode(LED_FAIL2, OUTPUT);
     pinMode(LATCH, OUTPUT);
     pinMode(CLOCK, OUTPUT);
     pinMode(DATA, OUTPUT);
     //reset Score to 0 for both players
     resetScore();
-    // Serial.println();
+    printShift();
 
 
 }
@@ -72,8 +80,11 @@ void loop() {
     //read analog input (0 - 1023) from copper inductor
 
     inputInductor = analogRead(INPUT_INDUCTOR);
+    if (inputInductor > 0) {
+        Serial.println(inputInductor);
+    }
 
-    if (inputInductor > 20 && inputInductor > highestPeak) {
+    if (inputInductor > 10 && inputInductor > highestPeak) {
         // check if last Signal was a long time ago, if so set 2ndSignal flag
         if (millis() - lastSignal > minInterspace && newSignal) {
             secondNewSignal = true;
@@ -84,7 +95,9 @@ void loop() {
         highestPeak = inputInductor; //save new highest value
         lastSignal = millis();
         newSignal = true;
+        passedInductor = true;
         Serial.print("______^__ NEW PEAK: "); Serial.println(lastSignal);
+        gameStarted = true;
     }
     // if a certain time has passed highest Peak will be reset
     if (millis() - lastSignal > minInterspace && lastSignal != 0) {
@@ -92,9 +105,18 @@ void loop() {
         // Serial.println("----------- Reset");
     }
 
+    if(millis() - lastSignal > maxPauseTime && gameStarted){
+		resetGame();
+    }
+
+    if(millis() - lastSignal > minInterspace && passedInductor){
+    	signalCount++;
+    	passedInductor = false;
+    }
+
     // read the state of the switch into a local variable:
     readings[0] = digitalRead(INPUT_BUT1); //reverse value because of pullup resistor: 0 if button is pressed
-    readings[1] = !digitalRead(INPUT_BUT2); //reverse value because of pullup resistor: 0 if button is pressed
+    readings[1] = digitalRead(INPUT_BUT2); //reverse value because of pullup resistor: 0 if button is pressed
     // Serial.println(analogRead(INPUT_INDUCTOR));
     // Serial.println(readings[0]);
 
@@ -144,6 +166,7 @@ void loop() {
         if (newSignal && lastButtonSignals[i] > 0 && lastButtonSignals[i] - lastSignal > 0 && !fails[i]) {
             evaluate (lastButtonSignals[i], lastSignal, i); //pass TimeEvents and Player (0 or 1)
         }
+
     }
 
 
@@ -153,7 +176,17 @@ void loop() {
         lastButtonStates[i] = readings[i];
     }
 
-    // printShift();
+    //set fail lights on, if fail
+    // digitalWrite(LED_FAIL1, fails[0]);
+    // digitalWrite(LED_FAIL2, fails[1]);
+    digitalWrite(LED_FAIL1, HIGH);
+    digitalWrite(LED_FAIL2, HIGH);
+
+
+    if (signalCount == 7) {
+        resetGame();
+    }
+    printShift();
 }
 
 
@@ -166,12 +199,12 @@ int evaluate (long buttonEvent, long signal, int player) {
     // reset newSignal flag so that further evaluation is impossible
     newSignal = false;
     secondNewSignal = false;
-    if (player == 0){
-    	points[0][pointsPosCounter] = 1; //set a point (1) at the current pos in the players score (points)
-    	points[1][pointsPosCounter] = 0; //set a 0 for the other player at the same position in the score
-    } else if(player == 1){
-    	points[1][pointsPosCounter] = 1;
-    	points[0][pointsPosCounter] = 0;
+    if (player == 0) {
+        points[0][pointsPosCounter] = 1; //set a point (1) at the current pos in the players score (points)
+        points[1][pointsPosCounter] = 0; //set a 0 for the other player at the same position in the score
+    } else if (player == 1) {
+        points[1][pointsPosCounter] = 1;
+        points[0][pointsPosCounter] = 0;
     }
     pointsPosCounter += 1; //increase current position in counter array by 1.
     //if somebody scored reset fails of both players
@@ -181,6 +214,7 @@ int evaluate (long buttonEvent, long signal, int player) {
     Serial.println();
     resetFails();
     printShift(); //print score in leds
+    printScore();
 }
 
 void resetScore() {
@@ -200,20 +234,22 @@ void resetFails() {
 
 void printShift() {
 
-	byte scorePlayer1 =  0;
-	byte scorePlayer2 =  0;
+    byte scorePlayer1 =  0;
+    byte scorePlayer2 =  0;
 
-    for(int i=0; i<6; i++){
+    for (int i = 0; i < 7; i++) {
         bitWrite(scorePlayer1, i, points[0][i]); // print score of player 1 in a byte
     }
-    for(int i=0; i<6; i++){
-    	bitWrite(scorePlayer2, i, points[1][i]);
+    for (int i = 0; i < 7; i++) {
+        bitWrite(scorePlayer2, i, points[1][i]);
     }
 
     // myByte = 204; //11001100
     // byte myByte2 = 48;  //00110000
     // Serial.println(myByte, BIN);
     // Serial.println(myByte2, BIN);
+    scorePlayer1 = 255;
+    scorePlayer2 = 255;
 
     digitalWrite(LATCH, LOW);
 
@@ -223,3 +259,40 @@ void printShift() {
     digitalWrite(LATCH, HIGH);
 
 }
+
+void printScore () {
+    for (int j = 0; j < 2; j++) {
+        for (int i = 0; i < 7; i++) {
+            Serial.print(points[j][i]); Serial.print(" ,");
+        }
+        Serial.println();
+    }
+
+}
+
+void resetGame() {
+	gameStarted = false;
+	delay(10000);
+    Serial.println("RESET GAME");
+    resetFails();
+    digitalWrite(LED_FAIL1, LOW);
+    digitalWrite(LED_FAIL2, LOW);
+
+    signalCount = 0;
+    byte zero = 0;
+
+    for (int i = 0; i < 3; i++) {
+        printShift();
+        delay(350);
+
+        digitalWrite(LATCH, LOW);
+        shiftOut(DATA, CLOCK, MSBFIRST, zero);
+        shiftOut(DATA, CLOCK, MSBFIRST, zero);
+        digitalWrite(LATCH, HIGH);
+        delay(350);
+    }
+    resetScore();
+
+}
+
+
